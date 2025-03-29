@@ -21,6 +21,8 @@ private:
         StonePickaxe, IronPickaxe, DiamondPickaxe, RubyPickaxe, EmeraldPickaxe,
         // Weapons
         StoneSword, IronSword, DiamondSword, GemstoneSlicer, NuclearBlaster,
+        // Serpent
+        Serpent,
         // Count
         Count
     };
@@ -33,11 +35,11 @@ private:
     // Table for converting the enum values into strings
     std::array<std::string_view, Item::Count> m_itemStringTable
     {
-        "Air", "Wood", "Log", "Stick", "Apple", "Cracker", "Bread", "Potato", "Jacket potato", 
-        "Carrot", "Mango", "Stone", "Coal", "Iron", "Gold", "Diamond", "Ruby", "Emerald", "Lapiz", 
+        "-", "Wood", "Log", "Stick", "Apple", "Cracker", "Bread", "Potato", "Jacket potato", 
+        "Carrot", "Mango", "#", "Coal", "Iron", "Gold", "Diamond", "Ruby", "Emerald", "Lapiz", 
         "Topaz", "Amethyst", "Uranium", "Thorium", "Stone pickaxe", "Iron pickaxe", 
         "Diamond pickaxe", "Ruby pickaxe", "Emerald pickaxe", "Stone sword", "Iron sword",
-        "Diamond sword", "Gemstone slicer", "Nuclear blaster"
+        "Diamond sword", "Gemstone slicer", "Nuclear blaster", "§"
     };
 
     // Cave and depth
@@ -113,7 +115,9 @@ void Cavern::GenerateCave()
 }
 
 void Cavern::GenerateMonster()
-{}
+{
+
+}
 
 void Cavern::GenerateMinerals()
 {}
@@ -123,10 +127,7 @@ void Cavern::PrintCave()
     for (const auto& row : m_cave)
     {
         for (const auto& col : row)
-            if (col != Item::Air)
-                std::print("{}", m_itemStringTable[col][0]);
-            else
-                std::print(" ");
+            std::print("{}", m_itemStringTable[col][0]);
         std::print("\n");
     }
 }
