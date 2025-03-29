@@ -17,6 +17,10 @@ private:
         Stone, Coal, Iron, Gold, Diamond, Ruby, Emerald, Lapiz, Topaz, Amethyst,
         // Radioactive
         Uranium, Thorium,
+        // Tools
+        StonePickaxe, IronPickaxe, DiamondPickaxe, RubyPickaxe, EmeraldPickaxe,
+        // Weapons
+        StoneSword, IronSword, DiamondSword, GemstoneSlicer, NuclearBlaster,
         // Count
         Count
     };
@@ -26,11 +30,14 @@ private:
     static constexpr auto s_maxHealth{ 30 };
     static constexpr auto s_maxHunger{ 15 };
 
+    // Table for converting the enum values into strings
     std::array<std::string_view, Item::Count> m_itemStringTable
     {
-        "Air", "Wood", "Log", "Stick", "Apple", "Cracker", "Bread", "Potato", "JacketPotato", 
+        "Air", "Wood", "Log", "Stick", "Apple", "Cracker", "Bread", "Potato", "Jacket potato", 
         "Carrot", "Mango", "Stone", "Coal", "Iron", "Gold", "Diamond", "Ruby", "Emerald", "Lapiz", 
-        "Topaz", "Amethyst", "Uranium", "Thorium"
+        "Topaz", "Amethyst", "Uranium", "Thorium", "Stone pickaxe", "Iron pickaxe", 
+        "Diamond pickaxe", "Ruby pickaxe", "Emerald pickaxe", "Stone sword", "Iron sword",
+        "Diamond sword", "Gemstone slicer", "Nuclear blaster"
     };
 
     // Cave and depth
@@ -48,10 +55,10 @@ public:
 
 private:
     void GenerateCave();
+    void GenerateMonster();
+    void GenerateMinerals();
     void PrintCave();
     void PrintPlayerInfo();
-
-    std::string_view ItemToString(Item item);
 };
 
 Cavern::Cavern()
@@ -93,10 +100,23 @@ void Cavern::GenerateCave()
         for (int i{}; i < airSpace && i + off < rowSz - 1; i++)
             row[i + off] = Item::Air;
 
+        // Every 10 depth a monster will have to be defeated
+        if (depth % 10 == 0)
+            GenerateMonster();
+        else
+            GenerateMinerals();
+
+
         // Update the previous offset
         prevOff = off;
     }
 }
+
+void Cavern::GenerateMonster()
+{}
+
+void Cavern::GenerateMinerals()
+{}
 
 void Cavern::PrintCave()
 {
