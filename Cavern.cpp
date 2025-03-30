@@ -62,7 +62,7 @@ private:
 
     // Cave and depth
     std::array<std::array<Item, 16>, 16> m_cave{};
-    unsigned m_depth{ 53 };
+    unsigned m_depth{ 51 };
     
     // Player information
     unsigned m_x{ 5 };
@@ -216,60 +216,41 @@ void Cavern::GenerateSerpent()
 
 void Cavern::GenerateMinerals()
 {
-    // TODO : clean up this code it is horrific
+    if (m_depth < 50)
+    {
+        // Defines that every 10 in depth the mineral will change
+        constexpr int mineralChange = 10;
 
-    // Generate iron at levels 0-3
-    if (m_depth < 4)
-    {
-        std::uniform_int_distribution<int> ironDist(0, 30);
-        for (int y{}; y < (int)m_cave.size(); y++)
-            for (int x{}; x < (int)m_cave[y].size(); x++)
-                if (ironDist(m_rng) == ironDist.max() && m_cave[y][x] == Item::Stone)
-                    m_cave[y][x] = Item::Iron;
+        // Random generators for the main and secondary mineral
+        std::uniform_int_distribution<int> primaryDist(0, 30);
+        std::uniform_int_distribution<int> secondaryDist(0, 60);
+
+        // Calculate the primary and secondary mineral
+        Item primary = (Item)(Item::Stone + m_depth / mineralChange);
+        Item secondary = (Item)(Item::Iron + m_depth / mineralChange);
+        
+        // Generate the minerals
+        for (unsigned y{}; y < m_cave.size(); y++)
+            for (unsigned x{}; x < m_cave[y].size(); x++)
+                // 1 in 30 change of primary mineral
+                if (primaryDist(m_rng) == primaryDist.max() && m_cave[y][x] == Item::Stone)
+                    m_cave[y][x] = primary;
+                // 1 in 60 chance of secondary mineral
+                else if (secondaryDist(m_rng) == secondaryDist.max() && m_cave[y][x] == Item::Stone)
+                    m_cave[y][x] = secondary;
     }
-    // Generate iron and gold at levels 4 - 7
-    else if (m_depth < 8)
-    {
-        std::uniform_int_distribution<int> ironDist(0, 20);
-        std::uniform_int_distribution<int> goldDist(0, 60);
-        for (int y{}; y < (int)m_cave.size(); y++)
-            for (int x{}; x < (int)m_cave[y].size(); x++)
-                if (ironDist(m_rng) == ironDist.max() && m_cave[y][x] == Item::Stone)
-                    m_cave[y][x] = Item::Iron;
-                else if (goldDist(m_rng) == goldDist.max() && m_cave[y][x] == Item::Stone)
-                    m_cave[y][x] = Item::Gold;
-    }
-    // Generate gold and diamond at levels 8-15
-    else if (m_depth < 16)
-    {
-        std::uniform_int_distribution<int> goldDist(0, 40);
-        std::uniform_int_distribution<int> diamondDist(0, 80);
-        for (int y{}; y < (int)m_cave.size(); y++)
-            for (int x{}; x < (int)m_cave[y].size(); x++)
-                if (goldDist(m_rng) == goldDist.max() && m_cave[y][x] == Item::Stone)
-                    m_cave[y][x] = Item::Gold;
-                else if (diamondDist(m_rng) == diamondDist.max() && m_cave[y][x] == Item::Stone)
-                    m_cave[y][x] = Item::Diamond;
-    }
-    // Generate diamond and ruby at levels 16-23
-    else if (m_depth < 24)
-    {
-        std::uniform_int_distribution<int> diamondDist(0, 50);
-        std::uniform_int_distribution<int> rubyDist(0, 90);
-        for (int y{}; y < (int)m_cave.size(); y++)
-            for (int x{}; x < (int)m_cave[y].size(); x++)
-                if (diamondDist(m_rng) == diamondDist.max() && m_cave[y][x] == Item::Stone)
-                    m_cave[y][x] = Item::Diamond;
-                else if (rubyDist(m_rng) == rubyDist.max() && m_cave[y][x] == Item::Stone)
-                    m_cave[y][x] = Item::Ruby;
-    }
-    // Generate all minerals
+    // After a depth of 50 generate all minerals diamond and above
     else
     {
+        // Random generators for the deciding stone or mineral and which mineral
+        std::uniform_int_distribution<int> stoneDist(0, 7);
         std::uniform_int_distribution<int> mineralDist(Item::Diamond, Item::Thorium);
-        for (int y{}; y < (int)m_cave.size(); y++)
-            for (int x{}; x < (int)m_cave[y].size(); x++)
-                if (m_cave[y][x] == Item::Stone)
+        
+        // Generate the minerals
+        for (unsigned y{}; y < m_cave.size(); y++)
+            for (unsigned x{}; x < m_cave[y].size(); x++)
+                // 1 in 7 chance of a mineral
+                if (stoneDist(m_rng) == stoneDist.max() && m_cave[y][x] == Item::Stone)
                     m_cave[y][x] = (Item)mineralDist(m_rng);
     }
 }
