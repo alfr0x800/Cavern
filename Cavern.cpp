@@ -30,7 +30,10 @@ private:
         Count
     };
 
-    enum Direction { North, East, South, West };
+    enum Direction
+    {
+        North, East, South, West
+    };
 
 private:
     // Maxes
@@ -51,30 +54,30 @@ private:
     std::array<std::string_view, Item::Count> m_itemSymbolTable
     {
         "\x1b[48;5;238m \x1b[0m", "Wood", "Log", "Stick", "Apple", "Cracker", "Bread", "Potato", 
-        "Jacket potato", "Carrot", "Mango", "\x1b[48;5;236m \x1b[0m", "I", "\x1b[33mG\x1b[0m", "Diamond", "Ruby", 
-        "Emerald", "Lapiz", "Topaz", "Amethyst", "Uranium", "Thorium", "Stone pickaxe", 
+        "Jacket potato", "Carrot", "Mango", "\x1b[48;5;236m \x1b[0m", "I", "\x1b[33mG\x1b[0m", "\x1b[36mD\x1b[0m", "\x1b[31mR\x1b[0m", 
+        "\x1b[32mE\x1b[0m", "\x1b[34mL\x1b[0m", "\x1b[33mT\x1b[0m", "\x1b[35mA\x1b[0m", "\x1b[42mU\x1b[0m", "\x1b[44mT\x1b[0m", "Stone pickaxe", 
         "Iron pickaxe", "Diamond pickaxe", "Ruby pickaxe", "Emerald pickaxe", "Stone sword",
         "Iron sword", "Diamond sword", "Gemstone slicer", "Nuclear blaster", "C", "\x1b[1;32m☺︎\x1b[0m", "\x1b[31m§\x1b[0m"
     };
 
     // Cave and depth
-    std::array<std::array<Item, 16>, 16> m_cave {};
-    unsigned m_depth { 7 };
+    std::array<std::array<Item, 16>, 16> m_cave{};
+    unsigned m_depth{ 53 };
     
     // Player information
-    unsigned m_x { 5 };
-    unsigned m_y { 5 };
-    std::unordered_map<Item, unsigned> m_inventory {};
-    unsigned m_health { s_maxHealth };
-    unsigned m_hunger { s_maxHunger };
-    bool m_inSerpentFight {};
+    unsigned m_x{ 5 };
+    unsigned m_y{ 5 };
+    std::unordered_map<Item, unsigned> m_inventory{};
+    unsigned m_health{ s_maxHealth };
+    unsigned m_hunger{ s_maxHunger };
+    bool m_inSerpentFight{};
     
     // The number of turns from the start
-    unsigned m_turns { 10 };
+    unsigned m_turns{ 0 };
 
     // Random number generation
-    std::random_device m_rndDevice {};
-    std::mt19937 m_rng { m_rndDevice() };
+    std::random_device m_rndDevice{};
+    std::mt19937 m_rng{ m_rndDevice() };
 
 public:
     Cavern();
@@ -213,13 +216,15 @@ void Cavern::GenerateSerpent()
 
 void Cavern::GenerateMinerals()
 {
+    // TODO : clean up this code it is horrific
+
     // Generate iron at levels 0-3
     if (m_depth < 4)
     {
         std::uniform_int_distribution<int> ironDist(0, 30);
         for (int y{}; y < (int)m_cave.size(); y++)
             for (int x{}; x < (int)m_cave[y].size(); x++)
-                if (ironDist(m_rng) == 30 && m_cave[y][x] == Item::Stone)
+                if (ironDist(m_rng) == ironDist.max() && m_cave[y][x] == Item::Stone)
                     m_cave[y][x] = Item::Iron;
     }
     // Generate iron and gold at levels 4 - 7
@@ -229,17 +234,44 @@ void Cavern::GenerateMinerals()
         std::uniform_int_distribution<int> goldDist(0, 60);
         for (int y{}; y < (int)m_cave.size(); y++)
             for (int x{}; x < (int)m_cave[y].size(); x++)
-                if (ironDist(m_rng) == 20 && m_cave[y][x] == Item::Stone)
+                if (ironDist(m_rng) == ironDist.max() && m_cave[y][x] == Item::Stone)
                     m_cave[y][x] = Item::Iron;
-                else if (goldDist(m_rng) == 50 && m_cave[y][x] == Item::Stone)
+                else if (goldDist(m_rng) == goldDist.max() && m_cave[y][x] == Item::Stone)
                     m_cave[y][x] = Item::Gold;
     }
-    // gold + diamond
-    //m_depth < 16
-    // diamond + ruby
-    //m_depth < 24
-    // all
-    //m_depth < 32
+    // Generate gold and diamond at levels 8-15
+    else if (m_depth < 16)
+    {
+        std::uniform_int_distribution<int> goldDist(0, 40);
+        std::uniform_int_distribution<int> diamondDist(0, 80);
+        for (int y{}; y < (int)m_cave.size(); y++)
+            for (int x{}; x < (int)m_cave[y].size(); x++)
+                if (goldDist(m_rng) == goldDist.max() && m_cave[y][x] == Item::Stone)
+                    m_cave[y][x] = Item::Gold;
+                else if (diamondDist(m_rng) == diamondDist.max() && m_cave[y][x] == Item::Stone)
+                    m_cave[y][x] = Item::Diamond;
+    }
+    // Generate diamond and ruby at levels 16-23
+    else if (m_depth < 24)
+    {
+        std::uniform_int_distribution<int> diamondDist(0, 50);
+        std::uniform_int_distribution<int> rubyDist(0, 90);
+        for (int y{}; y < (int)m_cave.size(); y++)
+            for (int x{}; x < (int)m_cave[y].size(); x++)
+                if (diamondDist(m_rng) == diamondDist.max() && m_cave[y][x] == Item::Stone)
+                    m_cave[y][x] = Item::Diamond;
+                else if (rubyDist(m_rng) == rubyDist.max() && m_cave[y][x] == Item::Stone)
+                    m_cave[y][x] = Item::Ruby;
+    }
+    // Generate all minerals
+    else
+    {
+        std::uniform_int_distribution<int> mineralDist(Item::Diamond, Item::Thorium);
+        for (int y{}; y < (int)m_cave.size(); y++)
+            for (int x{}; x < (int)m_cave[y].size(); x++)
+                if (m_cave[y][x] == Item::Stone)
+                    m_cave[y][x] = (Item)mineralDist(m_rng);
+    }
 }
 
 void Cavern::UpdatePlayer()
