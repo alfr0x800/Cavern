@@ -60,6 +60,7 @@ private:
     // Cave and depth
     std::array<std::array<Item, 16>, 16> m_cave {};
     unsigned m_depth { 7 };
+    
     // Player information
     unsigned m_x { 5 };
     unsigned m_y { 5 };
@@ -67,6 +68,7 @@ private:
     unsigned m_health { s_maxHealth };
     unsigned m_hunger { s_maxHunger };
     bool m_inSerpentFight {};
+    
     // The number of turns from the start
     unsigned m_turns { 10 };
 
@@ -87,12 +89,15 @@ private:
     void Attack();
     void OpenChest();
     void Help();
+    
     // Cave generation functions
     void GenerateCave();
     void GenerateSerpent();
     void GenerateMinerals();
+    
     // Player functions
     void UpdatePlayer();
+    
     // Printing functions
     void PrintCave();
     void PrintPlayerInfo();
@@ -152,13 +157,9 @@ void Cavern::Move(Direction direction)
     switch (direction)
     {
     case Direction::North: m_y -= m_y > 0 && m_cave[m_y - 1][m_x] == Item::Air; break;
-    case Direction::South: 
-        m_y += m_y < m_cave.size() - 1 && m_cave[m_y + 1][m_x] == Item::Air; break;
+    case Direction::South: m_y += m_y < m_cave.size() - 1 && m_cave[m_y + 1][m_x] == Item::Air; break;
     case Direction::West: m_x -= m_x > 0 && m_cave[m_y][m_x - 1] == Item::Air; break;
-    case Direction::East: 
-        m_x += m_x < m_cave[m_y].size() - 1 && m_cave[m_y][m_x + 1] == Item::Air; break;
-    default:
-        break;
+    case Direction::East: m_x += m_x < m_cave[m_y].size() - 1 && m_cave[m_y][m_x + 1] == Item::Air; break;
     }
 }
 
