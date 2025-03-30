@@ -53,11 +53,13 @@ private:
     // Table for converting the enums into symbols
     std::array<std::string_view, Item::Count> m_itemSymbolTable
     {
-        "\x1b[48;5;238m \x1b[0m", "Wood", "Log", "Stick", "Apple", "Cracker", "Bread", "Potato", 
-        "Jacket potato", "Carrot", "Mango", "\x1b[48;5;236m \x1b[0m", "I", "\x1b[33mG\x1b[0m", "\x1b[36mD\x1b[0m", "\x1b[31mR\x1b[0m", 
-        "\x1b[32mE\x1b[0m", "\x1b[34mL\x1b[0m", "\x1b[33mT\x1b[0m", "\x1b[35mA\x1b[0m", "\x1b[42mU\x1b[0m", "\x1b[44mT\x1b[0m", "Stone pickaxe", 
-        "Iron pickaxe", "Diamond pickaxe", "Ruby pickaxe", "Emerald pickaxe", "Stone sword",
-        "Iron sword", "Diamond sword", "Gemstone slicer", "Nuclear blaster", "C", "\x1b[1;32m☺︎\x1b[0m", "\x1b[31m§\x1b[0m"
+        "\x1b[48;5;238m \x1b[0m", "W", "L", "S", "Á", "C", "B", "P", "J", "C", "M", 
+        "\x1b[48;5;236m \x1b[0m", "I", "\x1b[33mG\x1b[0m", "\x1b[36mD\x1b[0m", "\x1b[31mR\x1b[0m", 
+        "\x1b[32mE\x1b[0m", "\x1b[34mL\x1b[0m", "\x1b[33mT\x1b[0m", "\x1b[35mA\x1b[0m", 
+        "\x1b[42mU\x1b[0m", "\x1b[44mT\x1b[0m", "\x1b[38;5;238m¶\x1b[0m", "¶", "\x1b[36m¶\x1b[0m", 
+        "\x1b[31m¶\x1b[0m", "\x1b[32m¶\x1b[0m", "\x1b[38;5;238m†\x1b[0m", "†", "\x1b[36m†\x1b[0m", 
+        "\x1b[44m\x1b[35m†\x1b[0m", "\x1b[42m¬\x1b[0m", "C", "\x1b[1;32m☺︎\x1b[0m",
+        "\x1b[31m§\x1b[0m"
     };
 
     // Cave and depth
