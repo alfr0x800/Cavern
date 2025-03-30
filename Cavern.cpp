@@ -49,12 +49,22 @@ private:
         "Diamond sword", "Gemstone slicer", "Nuclear blaster", "Player", "Serpent"
     };
 
+    // Table for converting the enums into symbols
+    std::array<std::string_view, Item::Count> m_itemSymbolTable
+    {
+        "\x1b[48;5;238m \x1b[0m", "Wood", "Log", "Stick", "Apple", "Cracker", "Bread", "Potato", 
+        "Jacket potato", "Carrot", "Mango", "\x1b[48;5;236m \x1b[0m", "Coal", "Iron", "Gold", "Diamond", "Ruby", 
+        "Emerald", "Lapiz", "Topaz", "Amethyst", "Uranium", "Thorium", "Stone pickaxe", 
+        "Iron pickaxe", "Diamond pickaxe", "Ruby pickaxe", "Emerald pickaxe", "Stone sword",
+        "Iron sword", "Diamond sword", "Gemstone slicer", "Nuclear blaster", "\x1b[1;32m☺︎\x1b[0m", "\x1b[31m§\x1b[0m"
+    };
+
     // Cave and depth
     std::array<std::array<Item, 16>, 16> m_cave{};
     unsigned depth{};
     // Player information
-    unsigned m_x{};
-    unsigned m_y{};
+    unsigned m_x{5};
+    unsigned m_y{5};
     std::unordered_map<Item, unsigned> m_inventory{};
     unsigned m_health{ s_maxHealth };
     unsigned m_hunger{ s_maxHunger };
@@ -68,7 +78,7 @@ public:
     void Play();
 
 private:
-    void GetPlayerResponse();
+    void GetPlayerCommand();
     void GenerateCave();
     void GenerateSerpent();
     void GenerateMinerals();
@@ -88,12 +98,12 @@ void Cavern::Play()
     {
         PrintCave();
         PrintPlayerInfo();
-        GetPlayerResponse();
+        GetPlayerCommand();
         UpdatePlayer();
     }
 }
 
-void Cavern::GetPlayerResponse()
+void Cavern::GetPlayerCommand()
 {
     // Get the user input
     std::cout << "> ";
@@ -103,17 +113,25 @@ void Cavern::GetPlayerResponse()
     // Run command
     switch (std::tolower(input[0]))
     {
-    case Command::MoveNorth: break;
-    case Command::MoveSouth: break;
-    case Command::MoveWest: break;
-    case Command::MoveEast: break;
+    case Command::MoveNorth:
+        m_y--;
+        break;
+    case Command::MoveSouth:
+        m_y++;
+        break;
+    case Command::MoveWest:
+        m_x++;
+        break;
+    case Command::MoveEast:
+        m_x--;
+        break;
     case Command::Mine: break;
     case Command::Attack: break;
     case Command::Open: break;
     case Command::Help: break;
     default:
         std::cout << "Bad command! use 'h' for help" << std::endl;
-        GetPlayerResponse();
+        GetPlayerCommand();
     }
 
     // Increase the amount of turns
@@ -164,7 +182,7 @@ void Cavern::GenerateCave()
 void Cavern::GenerateSerpent()
 {
     m_cave[3][11] = Item::Serpent;
-    m_cave[5][11] = Item::Player;
+    //m_cave[m_y][m_x] = Item::Player;
     m_inSerpentFight = true;
 }
 
@@ -182,27 +200,13 @@ void Cavern::UpdatePlayer()
 
 void Cavern::PrintCave()
 {
-    for (const auto& row : m_cave)
+    for (unsigned y{}; y < m_cave.size(); y++)
     {
-        for (const auto& col : row)
-            switch (col)
-            {
-            case Item::Air:
-                std::cout << "-";
-                break;
-            case Item::Stone:
-                std::cout << "#";
-                break;
-            case Item::Player:
-                std::cout << "\x1b[1;32m☺︎\x1b[0m";
-                break;
-            case Item::Serpent:
-                std::cout << "\x1b[1;31m§\x1b[0m";
-                break;
-            default:
-                std::cout << m_itemStringTable[col][0];
-                break;
-            }
+        for (unsigned x{}; x < m_cave[y].size(); x++)
+            if (y == m_y && x == m_x)
+                std::cout << m_itemSymbolTable[Item::Player];
+            else
+                std::cout << m_itemSymbolTable[m_cave[y][x]];
         std::cout << std::endl;
     }
 }
