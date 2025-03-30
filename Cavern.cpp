@@ -98,9 +98,6 @@ private:
     void GenerateSerpent();
     void GenerateMinerals();
     
-    // Player functions
-    void UpdatePlayer();
-    
     // Printing functions
     void PrintCave();
     void PrintPlayerInfo();
@@ -118,7 +115,6 @@ void Cavern::Play()
         PrintCave();
         PrintPlayerInfo();
         GetPlayerCommand();
-        UpdatePlayer();
     }
 }
 
@@ -179,7 +175,7 @@ void Cavern::GenerateCave()
 
     for (auto& row : m_cave)
     {
-        int rowSz = (int)row.size();
+        #define rowSz static_cast<int>(row.size())
 
         // Fill the row of the cave with stone
         row.fill(Item::Stone);
@@ -201,7 +197,6 @@ void Cavern::GenerateCave()
         else
             GenerateMinerals();
 
-
         // Update the previous offset
         prevOff = off;
     }
@@ -222,22 +217,22 @@ void Cavern::GenerateMinerals()
         constexpr int mineralChange = 10;
 
         // Random generators for the main and secondary mineral
-        std::uniform_int_distribution<int> primaryDist(0, 30);
-        std::uniform_int_distribution<int> secondaryDist(0, 60);
+        std::uniform_int_distribution<int> primaryDist(0, 29);
+        std::uniform_int_distribution<int> secondaryDist(0, 59);
 
         // Calculate the primary and secondary mineral
-        Item primary = (Item)(Item::Stone + m_depth / mineralChange);
-        Item secondary = (Item)(Item::Iron + m_depth / mineralChange);
+        Item primary = static_cast<Item>(Item::Stone + m_depth / mineralChange);
+        Item secondary = static_cast<Item>(Item::Iron + m_depth / mineralChange);
         
         // Generate the minerals
-        for (unsigned y{}; y < m_cave.size(); y++)
-            for (unsigned x{}; x < m_cave[y].size(); x++)
+        for (auto& row : m_cave)
+            for (auto& col : row)
                 // 1 in 30 change of primary mineral
-                if (primaryDist(m_rng) == primaryDist.max() && m_cave[y][x] == Item::Stone)
-                    m_cave[y][x] = primary;
+                if (primaryDist(m_rng) == primaryDist.max() && col == Item::Stone)
+                    col = primary;
                 // 1 in 60 chance of secondary mineral
-                else if (secondaryDist(m_rng) == secondaryDist.max() && m_cave[y][x] == Item::Stone)
-                    m_cave[y][x] = secondary;
+                else if (secondaryDist(m_rng) == secondaryDist.max() && col == Item::Stone)
+                    col = secondary;
     }
     // After a depth of 50 generate all minerals diamond and above
     else
@@ -247,21 +242,12 @@ void Cavern::GenerateMinerals()
         std::uniform_int_distribution<int> mineralDist(Item::Diamond, Item::Thorium);
         
         // Generate the minerals
-        for (unsigned y{}; y < m_cave.size(); y++)
-            for (unsigned x{}; x < m_cave[y].size(); x++)
-                // 1 in 7 chance of a mineral
-                if (stoneDist(m_rng) == stoneDist.max() && m_cave[y][x] == Item::Stone)
-                    m_cave[y][x] = (Item)mineralDist(m_rng);
+        for (auto& row : m_cave)
+            for (auto& col : row)
+                // 1 in 8 chance of a mineral
+                if (stoneDist(m_rng) == stoneDist.max() && col == Item::Stone)
+                    col = static_cast<Item>(mineralDist(m_rng));
     }
-}
-
-void Cavern::UpdatePlayer()
-{
-    // Start to die if there is no hunger and every 12 turns the hunger goes down
-    if (m_hunger == 0)
-        m_health--;
-    else if (m_turns % 12 == 0)
-        m_hunger--;
 }
 
 void Cavern::PrintCave()
@@ -269,6 +255,7 @@ void Cavern::PrintCave()
     for (unsigned y{}; y < m_cave.size(); y++)
     {
         for (unsigned x{}; x < m_cave[y].size(); x++)
+            // If the player is at the same position print it instead
             if (y == m_y && x == m_x)
                 std::cout << m_itemSymbolTable[Item::Player];
             else
