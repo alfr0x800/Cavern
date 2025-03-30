@@ -15,62 +15,64 @@ private:
         // Food
         Apple, Cracker, Bread, Potato, JacketPotato, Carrot, Mango,
         // Minerals
-        Stone, Coal, Iron, Gold, Diamond, Ruby, Emerald, Lapiz, Topaz, Amethyst,
+        Stone, Iron, Gold, Diamond, Ruby, Emerald, Lapiz, Topaz, Amethyst,
         // Radioactive
         Uranium, Thorium,
         // Tools
         StonePickaxe, IronPickaxe, DiamondPickaxe, RubyPickaxe, EmeraldPickaxe,
         // Weapons
         StoneSword, IronSword, DiamondSword, GemstoneSlicer, NuclearBlaster,
-        // Entities
+        // Chest
+        Chest,
+        // Entity
         Player, Serpent,
         // Count
         Count
     };
 
-    enum Command
-    {
-        MoveNorth = 'n', MoveEast = 'e', MoveSouth = 's', MoveWest = 'w', Mine ='m', Attack = 'a',
-        Open = 'o', Help = 'h'
-    };
+    enum Direction { North, East, South, West };
 
 private:
     // Maxes
-    static constexpr auto s_maxHealth{ 30 };
-    static constexpr auto s_maxHunger{ 15 };
+    static constexpr auto s_maxHealth { 30 };
+    static constexpr auto s_maxHunger { 15 };
 
     // Table for converting the enum values into strings
     std::array<std::string_view, Item::Count> m_itemStringTable
     {
         "Air", "Wood", "Log", "Stick", "Apple", "Cracker", "Bread", "Potato", "Jacket potato", 
-        "Carrot", "Mango", "Stone", "Coal", "Iron", "Gold", "Diamond", "Ruby", "Emerald", "Lapiz", 
+        "Carrot", "Mango", "Stone", "Iron", "Gold", "Diamond", "Ruby", "Emerald", "Lapiz", 
         "Topaz", "Amethyst", "Uranium", "Thorium", "Stone pickaxe", "Iron pickaxe", 
         "Diamond pickaxe", "Ruby pickaxe", "Emerald pickaxe", "Stone sword", "Iron sword",
-        "Diamond sword", "Gemstone slicer", "Nuclear blaster", "Player", "Serpent"
+        "Diamond sword", "Gemstone slicer", "Nuclear blaster", "Chest", "Player", "Serpent"
     };
 
     // Table for converting the enums into symbols
     std::array<std::string_view, Item::Count> m_itemSymbolTable
     {
         "\x1b[48;5;238m \x1b[0m", "Wood", "Log", "Stick", "Apple", "Cracker", "Bread", "Potato", 
-        "Jacket potato", "Carrot", "Mango", "\x1b[48;5;236m \x1b[0m", "Coal", "Iron", "Gold", "Diamond", "Ruby", 
+        "Jacket potato", "Carrot", "Mango", "\x1b[48;5;236m \x1b[0m", "I", "\x1b[33mG\x1b[0m", "Diamond", "Ruby", 
         "Emerald", "Lapiz", "Topaz", "Amethyst", "Uranium", "Thorium", "Stone pickaxe", 
         "Iron pickaxe", "Diamond pickaxe", "Ruby pickaxe", "Emerald pickaxe", "Stone sword",
-        "Iron sword", "Diamond sword", "Gemstone slicer", "Nuclear blaster", "\x1b[1;32m☺︎\x1b[0m", "\x1b[31m§\x1b[0m"
+        "Iron sword", "Diamond sword", "Gemstone slicer", "Nuclear blaster", "C", "\x1b[1;32m☺︎\x1b[0m", "\x1b[31m§\x1b[0m"
     };
 
     // Cave and depth
-    std::array<std::array<Item, 16>, 16> m_cave{};
-    unsigned depth{};
+    std::array<std::array<Item, 16>, 16> m_cave {};
+    unsigned m_depth { 7 };
     // Player information
-    unsigned m_x{5};
-    unsigned m_y{5};
-    std::unordered_map<Item, unsigned> m_inventory{};
-    unsigned m_health{ s_maxHealth };
-    unsigned m_hunger{ s_maxHunger };
-    bool m_inSerpentFight{};
+    unsigned m_x { 5 };
+    unsigned m_y { 5 };
+    std::unordered_map<Item, unsigned> m_inventory {};
+    unsigned m_health { s_maxHealth };
+    unsigned m_hunger { s_maxHunger };
+    bool m_inSerpentFight {};
     // The number of turns from the start
-    unsigned m_turns{ 10 };
+    unsigned m_turns { 10 };
+
+    // Random number generation
+    std::random_device m_rndDevice {};
+    std::mt19937 m_rng { m_rndDevice() };
 
 public:
     Cavern();
@@ -78,11 +80,20 @@ public:
     void Play();
 
 private:
+    // Command functions
     void GetPlayerCommand();
+    void Move(Direction direction);
+    void Mine();
+    void Attack();
+    void OpenChest();
+    void Help();
+    // Cave generation functions
     void GenerateCave();
     void GenerateSerpent();
     void GenerateMinerals();
+    // Player functions
     void UpdatePlayer();
+    // Printing functions
     void PrintCave();
     void PrintPlayerInfo();
 };
@@ -113,22 +124,20 @@ void Cavern::GetPlayerCommand()
     // Run command
     switch (std::tolower(input[0]))
     {
-    case Command::MoveNorth:
-        m_y--;
+    case 'n': Move(Direction::North); break;
+    case 's': Move(Direction::South); break;
+    case 'w': Move(Direction::West); break;
+    case 'e': Move(Direction::East); break;
+    //case 'm': Mine(); break;
+    /*case 'a': 
+        Attack();
         break;
-    case Command::MoveSouth:
-        m_y++;
+    case 'o': 
+        OpenChest();
         break;
-    case Command::MoveWest:
-        m_x++;
-        break;
-    case Command::MoveEast:
-        m_x--;
-        break;
-    case Command::Mine: break;
-    case Command::Attack: break;
-    case Command::Open: break;
-    case Command::Help: break;
+    case 'h': 
+        Help();
+        break;*/
     default:
         std::cout << "Bad command! use 'h' for help" << std::endl;
         GetPlayerCommand();
@@ -136,6 +145,21 @@ void Cavern::GetPlayerCommand()
 
     // Increase the amount of turns
     m_turns++;
+}
+
+void Cavern::Move(Direction direction)
+{
+    switch (direction)
+    {
+    case Direction::North: m_y -= m_y > 0 && m_cave[m_y - 1][m_x] == Item::Air; break;
+    case Direction::South: 
+        m_y += m_y < m_cave.size() - 1 && m_cave[m_y + 1][m_x] == Item::Air; break;
+    case Direction::West: m_x -= m_x > 0 && m_cave[m_y][m_x - 1] == Item::Air; break;
+    case Direction::East: 
+        m_x += m_x < m_cave[m_y].size() - 1 && m_cave[m_y][m_x + 1] == Item::Air; break;
+    default:
+        break;
+    }
 }
 
 void Cavern::GenerateCave()
@@ -168,7 +192,7 @@ void Cavern::GenerateCave()
             row[i + off] = Item::Air;
 
         // Every 10 depth a serpent will have to be defeated
-        if (depth % 10 == 0)
+        if (m_depth % 10 == 0)
             GenerateSerpent();
         else
             GenerateMinerals();
@@ -187,7 +211,35 @@ void Cavern::GenerateSerpent()
 }
 
 void Cavern::GenerateMinerals()
-{}
+{
+    // Generate iron at levels 0-3
+    if (m_depth < 4)
+    {
+        std::uniform_int_distribution<int> ironDist(0, 30);
+        for (int y{}; y < (int)m_cave.size(); y++)
+            for (int x{}; x < (int)m_cave[y].size(); x++)
+                if (ironDist(m_rng) == 30 && m_cave[y][x] == Item::Stone)
+                    m_cave[y][x] = Item::Iron;
+    }
+    // Generate iron and gold at levels 4 - 7
+    else if (m_depth < 8)
+    {
+        std::uniform_int_distribution<int> ironDist(0, 20);
+        std::uniform_int_distribution<int> goldDist(0, 60);
+        for (int y{}; y < (int)m_cave.size(); y++)
+            for (int x{}; x < (int)m_cave[y].size(); x++)
+                if (ironDist(m_rng) == 20 && m_cave[y][x] == Item::Stone)
+                    m_cave[y][x] = Item::Iron;
+                else if (goldDist(m_rng) == 50 && m_cave[y][x] == Item::Stone)
+                    m_cave[y][x] = Item::Gold;
+    }
+    // gold + diamond
+    //m_depth < 16
+    // diamond + ruby
+    //m_depth < 24
+    // all
+    //m_depth < 32
+}
 
 void Cavern::UpdatePlayer()
 {
