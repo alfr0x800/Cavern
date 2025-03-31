@@ -36,9 +36,12 @@ private:
     };
 
 private:
+    // Cave size
+    static constexpr auto s_caveSz{ 16 };
+
     // Maxes
-    static constexpr auto s_maxHealth { 30 };
-    static constexpr auto s_maxHunger { 15 };
+    static constexpr auto s_maxHealth{ 30 };
+    static constexpr auto s_maxHunger{ 15 };
 
     // Table for converting the enum values into strings
     std::array<std::string_view, Item::Count> m_itemStringTable
@@ -63,7 +66,7 @@ private:
     };
 
     // Cave and depth
-    std::array<std::array<Item, 16>, 16> m_cave{};
+    std::array<std::array<Item, s_caveSz>, s_caveSz> m_cave{};
     unsigned m_depth{ 51 };
     
     // Player information
@@ -111,7 +114,8 @@ Cavern::Cavern()
 
 void Cavern::Play()
 {
-    m_inventory[Item::StonePickaxe] = 1;
+    for (int i{}; i < Item::Count; i++)
+        m_inventory[(Item)i] = 1;
     while (true)
     {
         PrintGame();
@@ -122,7 +126,7 @@ void Cavern::Play()
 void Cavern::GetPlayerCommand()
 {
     // Get the user input
-    std::cout << "\x1b[18;2H> ";
+    std::cout << "\x1b[" << s_caveSz + 2 << "H> ";
     std::string input;
     std::cin >> input;
 
@@ -148,9 +152,9 @@ void Cavern::Move(Direction direction)
     switch (direction)
     {
     case Direction::North: m_y -= m_y > 0 && m_cave[m_y - 1][m_x] == Item::Air; break;
-    case Direction::South: m_y += m_y < m_cave.size() - 1 && m_cave[m_y + 1][m_x] == Item::Air; break;
+    case Direction::South: m_y += m_y < s_caveSz - 1 && m_cave[m_y + 1][m_x] == Item::Air; break;
     case Direction::West: m_x -= m_x > 0 && m_cave[m_y][m_x - 1] == Item::Air; break;
-    case Direction::East: m_x += m_x < m_cave[m_y].size() - 1 && m_cave[m_y][m_x + 1] == Item::Air; break;
+    case Direction::East: m_x += m_x < s_caveSz - 1 && m_cave[m_y][m_x + 1] == Item::Air; break;
     }
 }
 
@@ -159,12 +163,12 @@ void Cavern::Mine()
     // Mine the minerals around the player
     for (int y{ -1 }; y <= 1; y++)
     {
-        if (m_y + y < 0 || m_y + y > m_cave.size())
+        if (m_y + y < 0 || m_y + y > s_caveSz)
             continue;
 
         for (int x{ -1 }; x <= 1; x++)
         {
-            if (m_x + x < 0 || m_x + x > m_cave[y].size())
+            if (m_x + x < 0 || m_x + x > s_caveSz)
                 continue;
 
             m_inventory[m_cave[m_y + y][m_x + x]] += m_cave[m_y + y][m_x + x] != Item::Air;
@@ -186,8 +190,6 @@ void Cavern::GenerateCave()
 
     for (auto& row : m_cave)
     {
-        #define rowSz static_cast<int>(row.size())
-
         // Fill the row of the cave with stone
         row.fill(Item::Stone);
 
@@ -196,11 +198,11 @@ void Cavern::GenerateCave()
         int off{ prevOff + offDist(rng) };
 
         // Handle extreme values for offset
-        off = off + airSpace > rowSz ? off - ((off + airSpace) - rowSz) - offDist(rng) : off;
+        off = off + airSpace > s_caveSz ? off - ((off + airSpace) - s_caveSz) - offDist(rng) : off;
         off = off < 1 ? 2 : off;
 
         // Fill in the air space
-        for (int i{}; i < airSpace && i + off < rowSz - 1; i++)
+        for (int i{}; i < airSpace && i + off < s_caveSz - 1; i++)
             row[i + off] = Item::Air;
 
         // Every 10 depth a serpent will have to be defeated
@@ -216,9 +218,6 @@ void Cavern::GenerateCave()
 
 void Cavern::GenerateSerpent()
 {
-    m_cave[3][11] = Item::Serpent;
-    //m_cave[m_y][m_x] = Item::Player;
-    m_inSerpentFight = true;
 }
 
 void Cavern::GenerateMinerals()
@@ -268,21 +267,37 @@ void Cavern::PrintGame()
     std::cout << "\x1b[2J\x1b[1;1H";
     
     // Print the cave
-    for (unsigned y{}; y < m_cave.size(); y++)
+    for (const auto& row : m_cave)
     {
-        for (unsigned x{}; x < m_cave[y].size(); x++)
-            // If the player is at the same position print it instead
-            if (y == m_y && x == m_x)
-                std::cout << m_itemSymbolTable[Item::Player];
-            else
-                std::cout << m_itemSymbolTable[m_cave[y][x]];
+        for (const auto& col : row)
+            std::cout << m_itemSymbolTable[col];
         std::cout << std::endl;
     }
+
+    // Print the player
+    std::cout << "\x1b[" << m_y + 1 << ";" << m_x + 1 << "H" << m_itemSymbolTable[Item::Player];
 
     // Print player and cave information
     std::cout << "\x1b[2;19HHealth : " << m_health << "/" << s_maxHealth;
     std::cout << "\x1b[3;19HHunger : " << m_hunger << "/" << s_maxHunger;
     std::cout << "\x1b[4;19HDepth  : " << m_depth;
+
+    // Print player inventory
+    // TODO : clean this up
+    int x{ 19 }, y{ 6 }, longest{ 0 };
+    for (const auto&[ item, amount ]: m_inventory)
+    {
+        if (y == 16)
+        {
+            y = 6;
+            x += longest;
+            longest = 0;
+        }
+        std::string s = std::format("{}x {}", amount, m_itemStringTable[item]);
+        if (s.size() > longest)
+            longest = (int)s.size() + 2;
+        std::cout << "\x1b[" << y++ << ";" << x << "H" << s; 
+    }
 }
 
 int main()
