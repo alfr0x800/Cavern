@@ -101,8 +101,7 @@ private:
     void GenerateMinerals();
     
     // Printing functions
-    void PrintCave();
-    void PrintPlayerInfo();
+    void PrintGame();
 };
 
 Cavern::Cavern()
@@ -112,10 +111,10 @@ Cavern::Cavern()
 
 void Cavern::Play()
 {
+    m_inventory[Item::StonePickaxe] = 1;
     while (true)
     {
-        PrintCave();
-        PrintPlayerInfo();
+        PrintGame();
         GetPlayerCommand();
     }
 }
@@ -123,30 +122,21 @@ void Cavern::Play()
 void Cavern::GetPlayerCommand()
 {
     // Get the user input
-    std::cout << "> ";
+    std::cout << "\x1b[18;2H> ";
     std::string input;
     std::cin >> input;
 
     // Run command
-    switch (std::tolower(input[0]))
+    for (const auto& c : input) 
     {
-    case 'n': Move(Direction::North); break;
-    case 's': Move(Direction::South); break;
-    case 'w': Move(Direction::West); break;
-    case 'e': Move(Direction::East); break;
-    //case 'm': Mine(); break;
-    /*case 'a': 
-        Attack();
-        break;
-    case 'o': 
-        OpenChest();
-        break;
-    case 'h': 
-        Help();
-        break;*/
-    default:
-        std::cout << "Bad command! use 'h' for help" << std::endl;
-        GetPlayerCommand();
+        switch (std::tolower(c))
+        {
+        case 'n': Move(Direction::North); break;
+        case 's': Move(Direction::South); break;
+        case 'w': Move(Direction::West); break;
+        case 'e': Move(Direction::East); break;
+        case 'm': Mine(); break;
+        };
     }
 
     // Increase the amount of turns
@@ -161,6 +151,25 @@ void Cavern::Move(Direction direction)
     case Direction::South: m_y += m_y < m_cave.size() - 1 && m_cave[m_y + 1][m_x] == Item::Air; break;
     case Direction::West: m_x -= m_x > 0 && m_cave[m_y][m_x - 1] == Item::Air; break;
     case Direction::East: m_x += m_x < m_cave[m_y].size() - 1 && m_cave[m_y][m_x + 1] == Item::Air; break;
+    }
+}
+
+void Cavern::Mine()
+{
+    // Mine the minerals around the player
+    for (int y{ -1 }; y <= 1; y++)
+    {
+        if (m_y + y < 0 || m_y + y > m_cave.size())
+            continue;
+
+        for (int x{ -1 }; x <= 1; x++)
+        {
+            if (m_x + x < 0 || m_x + x > m_cave[y].size())
+                continue;
+
+            m_inventory[m_cave[m_y + y][m_x + x]] += m_cave[m_y + y][m_x + x] != Item::Air;
+            m_cave[m_y + y][m_x + x] = Item::Air;
+        }
     }
 }
 
@@ -185,6 +194,7 @@ void Cavern::GenerateCave()
         // Generate the air space and offset of it
         int airSpace{ airSpaceDist(rng) };
         int off{ prevOff + offDist(rng) };
+
         // Handle extreme values for offset
         off = off + airSpace > rowSz ? off - ((off + airSpace) - rowSz) - offDist(rng) : off;
         off = off < 1 ? 2 : off;
@@ -252,8 +262,12 @@ void Cavern::GenerateMinerals()
     }
 }
 
-void Cavern::PrintCave()
+void Cavern::PrintGame()
 {
+    // Clear the screen
+    std::cout << "\x1b[2J\x1b[1;1H";
+    
+    // Print the cave
     for (unsigned y{}; y < m_cave.size(); y++)
     {
         for (unsigned x{}; x < m_cave[y].size(); x++)
@@ -264,12 +278,11 @@ void Cavern::PrintCave()
                 std::cout << m_itemSymbolTable[m_cave[y][x]];
         std::cout << std::endl;
     }
-}
 
-void Cavern::PrintPlayerInfo()
-{
-    std::cout << "Health: " << m_health << "/" << s_maxHealth << std::endl;
-    std::cout << "Hunger: " << m_hunger << "/" << s_maxHunger << std::endl;
+    // Print player and cave information
+    std::cout << "\x1b[2;19HHealth : " << m_health << "/" << s_maxHealth;
+    std::cout << "\x1b[3;19HHunger : " << m_hunger << "/" << s_maxHunger;
+    std::cout << "\x1b[4;19HDepth  : " << m_depth;
 }
 
 int main()
