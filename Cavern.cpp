@@ -61,7 +61,7 @@ private:
         "\x1b[32mE\x1b[0m", "\x1b[34mL\x1b[0m", "\x1b[33mT\x1b[0m", "\x1b[35mA\x1b[0m", 
         "\x1b[42mU\x1b[0m", "\x1b[44mT\x1b[0m", "\x1b[38;5;238m¶\x1b[0m", "¶", "\x1b[36m¶\x1b[0m", 
         "\x1b[31m¶\x1b[0m", "\x1b[32m¶\x1b[0m", "\x1b[38;5;238m†\x1b[0m", "†", "\x1b[36m†\x1b[0m", 
-        "\x1b[44m\x1b[35m†\x1b[0m", "\x1b[42m¬\x1b[0m", "C", "\x1b[1;32m☺︎\x1b[0m",
+        "\x1b[44m\x1b[35m†\x1b[0m", "\x1b[42m¬\x1b[0m", "\x1b[33mÇ\x1b[0m", "\x1b[1;32m☺︎\x1b[0m",
         "\x1b[31m§\x1b[0m"
     };
 
@@ -94,14 +94,13 @@ private:
     void GetPlayerCommand();
     void Move(Direction direction);
     void Mine();
-    void Attack();
     void OpenChest();
-    void Help();
     
     // Cave generation functions
     void GenerateCave();
     void GenerateSerpent();
     void GenerateMinerals();
+    void GenerateChest();
     
     // Printing functions
     void PrintGame();
@@ -114,8 +113,6 @@ Cavern::Cavern()
 
 void Cavern::Play()
 {
-    for (int i{}; i < Item::Count; i++)
-        m_inventory[(Item)i] = 1;
     while (true)
     {
         PrintGame();
@@ -126,8 +123,8 @@ void Cavern::Play()
 void Cavern::GetPlayerCommand()
 {
     // Get the user input
-    std::cout << "\x1b[" << s_caveSz + 2 << "H> ";
     std::string input;
+    std::cout << "\x1b[" << s_caveSz + 2 << "H> ";
     std::cin >> input;
 
     // Run command
@@ -151,10 +148,22 @@ void Cavern::Move(Direction direction)
 {
     switch (direction)
     {
-    case Direction::North: m_y -= m_y > 0 && m_cave[m_y - 1][m_x] == Item::Air; break;
-    case Direction::South: m_y += m_y < s_caveSz - 1 && m_cave[m_y + 1][m_x] == Item::Air; break;
-    case Direction::West: m_x -= m_x > 0 && m_cave[m_y][m_x - 1] == Item::Air; break;
-    case Direction::East: m_x += m_x < s_caveSz - 1 && m_cave[m_y][m_x + 1] == Item::Air; break;
+    case Direction::North: 
+        if (m_y > 0 && m_cave[m_y - 1][m_x] == Item::Air)
+            m_y--; 
+        break;
+    case Direction::South: 
+        if (m_y < s_caveSz - 1 && m_cave[m_y + 1][m_x] == Item::Air)
+            m_y++;
+        break;
+    case Direction::West: 
+        if (m_x > 0 && m_cave[m_y][m_x - 1] == Item::Air)
+            m_x--;
+        break;
+    case Direction::East: 
+        if (m_x < s_caveSz - 1 && m_cave[m_y][m_x + 1] == Item::Air)
+            m_x++;
+        break;
     }
 }
 
@@ -170,11 +179,19 @@ void Cavern::Mine()
         {
             if (m_x + x < 0 || m_x + x > s_caveSz)
                 continue;
-
-            m_inventory[m_cave[m_y + y][m_x + x]] += m_cave[m_y + y][m_x + x] != Item::Air;
-            m_cave[m_y + y][m_x + x] = Item::Air;
+            
+            Item& col = m_cave[m_y + y][m_x + x];
+            if (col != Item::Air && col != Item::Chest)
+            {
+                m_inventory[col]++;
+                col = Item::Air;
+            }
         }
     }
+}
+
+void Cavern::OpenChest()
+{
 }
 
 void Cavern::GenerateCave()
@@ -198,18 +215,18 @@ void Cavern::GenerateCave()
         int off{ prevOff + offDist(rng) };
 
         // Handle extreme values for offset
-        off = off + airSpace > s_caveSz ? off - ((off + airSpace) - s_caveSz) - offDist(rng) : off;
-        off = off < 1 ? 2 : off;
+        if (off + airSpace > s_caveSz)
+            off -= ((off + airSpace) - s_caveSz) - offDist(rng);
+        else if (off < 1)
+            off = 2;
 
         // Fill in the air space
         for (int i{}; i < airSpace && i + off < s_caveSz - 1; i++)
             row[i + off] = Item::Air;
 
-        // Every 10 depth a serpent will have to be defeated
-        if (m_depth % 10 == 0)
-            GenerateSerpent();
-        else
-            GenerateMinerals();
+        // Generate the rest of the cave
+        GenerateMinerals();
+        GenerateChest();
 
         // Update the previous offset
         prevOff = off;
@@ -259,6 +276,15 @@ void Cavern::GenerateMinerals()
                 if (stoneDist(m_rng) == stoneDist.max() && col == Item::Stone)
                     col = static_cast<Item>(mineralDist(m_rng));
     }
+}
+
+void Cavern::GenerateChest()
+{
+    // Genrate a chest randomly on all levels
+    std::uniform_int_distribution<int> chestDist(0, 7);
+    // 1 in 8 chance of a chest generating
+    if (chestDist(m_rng) == chestDist.max())
+        m_cave[7][7] = Item::Chest;
 }
 
 void Cavern::PrintGame()
